@@ -1,0 +1,48 @@
+
+### API server
+
+POST http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/accounts/ciccio/transaction
+Content-Type: application/json
+
+{
+  "amount":4
+}
+
+###
+
+POST http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/accounts/123456789/transaction
+Content-Type: application/json
+
+100.0
+
+###
+
+GET http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/accounts/123456789
+Accept: application/json
+
+###
+
+POST http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/accounts/123456789/transaction
+Content-Type: application/json
+
+{
+  "amount":100
+}
+
+
+
+###
+GET http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/accounts/ar
+Accept: application/json
+
+###
+
+GET http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/accounts/repo/
+Accept: application/json
+
+
+### TRANSACTION SERVICE
+
+POST http://transaction-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/transactions/123456789
+
+100
