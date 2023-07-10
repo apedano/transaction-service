@@ -46,3 +46,16 @@ Accept: application/json
 POST http://transaction-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/transactions/123456789
 
 100
+
+###
+
+POST http://account-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/accounts/123456789/transaction-headers
+
+100
+
+###
+
+POST http://transaction-service-xan80-dev.apps.sandbox-m4.g2pi.p1.openshiftapps.com/api/transactions/123456789/headers
+
+100
+

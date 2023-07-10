@@ -138,3 +138,106 @@ The _Route_ exposed by the _account-service_ application on Kubernetes must be u
 %prod.quarkus.rest-client.account-service.scope=singleton
 ```
 
+## Customizing REST clients
+
+### Client request headers
+
+We can add the headers to the client call method 
+
+```java
+@Path("/api/accounts")
+@ClientHeaderParam(name = "class-level-param", value = "AccountServiceinterface") //Adds class-level-param to the outgoing HTTP request header.
+    // At class level it will be added to all methods
+@RegisterClientHeaders //Indicates the default ClientHeadersFactory should be used. The default factory will propagate any
+    //headers from an inbound JAX-RS request onto the outbound client request, where the headers are
+    //        added as a comma-separated list into the configuration key named
+    //        org.eclipse.microprofile.rest.client.propagateHeaders. A custom ClientHeadersFactory can also be added
+        ...
+public interface AccountService {
+    ...
+
+    @POST
+    @Path("{accountNumber}/transaction-headers")
+    @ClientHeaderParam(name = "method-level-param", value = "{generateParameterValue}")
+        //Similar to the usage of @ClientHeaderParam on the type, it adds the method-level-param header to
+        //the outbound HTTP request to the external service.
+    Map<String, List<String>> transactionHeaders(@PathParam("accountNumber") Long
+                                                accountNumber, BigDecimal amount, @Context HttpHeaders httpHeaders);
+
+    /**
+     * Default method on the interface used to create a value for the header on transactionHeaders
+     * TODO: dafault method is not supported in quarkus native image build
+     * @return
+     */
+    default String generateParameterValue() {
+        return "Value generated in method for async call";
+    }
+}
+```
+
+In the server we can inject the incoming request headers
+
+```java
+@POST
+    @Path("{accountNumber}/transaction-headers")
+    public Map<String, List<String>> transactionHeaders(@PathParam("accountNumber") Long
+                                                                accountNumber, BigDecimal amount,
+                                                        @Context HttpHeaders httpHeaders) { //@Context is equivalent to @Inject for CDI in the JAX-RS
+        //returns the headers from the incoming call including the class and method level ones defined in the AcccountService interface
+        return httpHeaders.getRequestHeaders();
+    }
+```
+
+### Changing providers
+
+This is the sequence of processing REST client interfaces in JAX-RS, for each we can define a _provider_ to customize its behavior
+
+![img_3.png](img_3.png)
+
+**NOTE**: thi applies to the communications between the ``AccountService`` server and client! Not to the calls to the ``TransactionResource`` which is the exposed resource.
+
+We can define a provider by:
+
+* Annotating the class with ``@Provider``
+* Associate the provider with the REST client interfaces with ``@RegisterProvider(MyProvider.class)``
+* When using the programmatic approach, use ``builder.register(MyProvider.class)``
+* Implement either ``RestClientBuilderListener`` or ``RestClientListener``, and
+  register the provider directly onto the ``RestClientBuilder`` 
+
+#### Create a _ClientRequestFilter_ provider
+
+The implementation of the REST client interfaces is
+
+```java
+public class AccountRequestFilter implements ClientRequestFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccountRequestFilter.class);
+
+    /*
+    This implementation adds the invoked method to the request as a param
+     */
+    @Override
+    public void filter(ClientRequestContext requestContext) throws IOException {
+        LOGGER.info("Inside the AccountRequestFilter provider method");
+        Method invokedMethod =
+                (Method) requestContext.getProperty("org.eclipse.microprofile.rest.client.invokedMethod");
+        requestContext.getHeaders().add("Invoked-Client-Method", invokedMethod.getName());
+    }
+}
+```
+
+In this case we are manipulating the call to the ``AccountService`` server by adding a header to the client call.
+
+Then we add the filter as a provider to the ``AccountService`` contract:
+
+```java
+@RegisterProvider(AccountRequestFilter.class) //Adds the ClientRequestFilter Rest service interface impl as provider
+public interface AccountService {
+  ...
+}
+```
+
+We could also annotate the class with ``@Provider``, but with this approach we make it part of the shared contract.
+
+
+

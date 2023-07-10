@@ -31,6 +31,14 @@ public class WiremockAccountService implements QuarkusTestResourceLifecycleManag
         stubFor(post(urlEqualTo("/api/accounts/121212/transaction"))
                 .willReturn(noContent())
         );
+
+        stubFor(post(urlEqualTo("/api/accounts/121212/transaction-headers"))
+                .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody("{\"myHeader\": [\"myValue\"]}")
+//                        .withHeader("Content-Type", "application/json")
+//                        .withHeader("myHeader", "myValue"))
+                ));
         /*
         Sets an environment variable named io.quarkus.transactions.AccountService/mp-rest/url to the URL
         of the WireMock server. The variable name matches the expected name of the configuration key for
